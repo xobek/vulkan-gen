@@ -2,8 +2,9 @@
 #include "gametypes.h"
 #include "logger.h"
 
-#include <platform/platform.h>
-#include <core/vmemory.h>
+#include "platform/platform.h"
+#include "core/vmemory.h"
+#include "core/event.h"
 
 typedef struct application_state {
     game* game_inst;
@@ -33,6 +34,11 @@ b8 application_create(game* game_inst) {
 
     app_state.is_running = TRUE;
     app_state.is_suspended = FALSE;
+
+    if(!event_initialize()) {
+        ERROR("Event system failed initialization!");
+        return FALSE;
+    }
 
     if (!platform_startup(
         &app_state.platform, 
@@ -78,6 +84,7 @@ b8 application_run() {
     }
 
     app_state.is_running = FALSE;
+    event_shutdown();
     platform_shutdown(&app_state.platform);
     return TRUE;
 }

@@ -7,6 +7,11 @@
         "asserts.h": "c",
         "logger.h": "c",
         "xiosbase": "c",
-        "vmemory.h": "c"
+        "vmemory.h": "c",
+        "iosfwd": "c",
+        "tuple": "cpp",
+        "utility": "cpp",
+        "platform.h": "c",
+        "event.h": "c"
     }
 }
