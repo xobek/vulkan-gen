@@ -10,8 +10,8 @@ b8 platform_startup(platform_state* pstate, const char* app_name, i32 x, i32 y, 
 void platform_shutdown(platform_state* state);
 b8 platform_pump_messages(platform_state* state);
 
-API void* platform_allocate(u64 size, b8 aligned);
-API void platform_free(void* block, b8 aligned);
+void* platform_allocate(u64 size, b8 aligned);
+void platform_free(void* block, b8 aligned);
 void* platform_zero_memory(void* block, u64 size);
 void* platform_copy_memory(void* dest, const void* source, u64 size);
 void* platform_set_memory(void* dest, i32 value, u64 size);

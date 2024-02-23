@@ -1,7 +1,7 @@
 #include "game.h"
 #include <entry.h>
 
-#include <platform/platform.h>
+#include <core/vmemory.h>
 
 b8 create_game(game* game) {
     game->config.x = 100;
@@ -15,6 +15,6 @@ b8 create_game(game* game) {
     game->render = game_render;
     game->on_resize = game_on_resize;
 
-    game->state = platform_allocate(sizeof(game_state), 0);
+    game->state = vallocate(sizeof(game_state), MEMORY_TAG_GAME);
     return TRUE;
 }

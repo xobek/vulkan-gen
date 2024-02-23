@@ -6,6 +6,7 @@
         "application.h": "c",
         "asserts.h": "c",
         "logger.h": "c",
-        "xiosbase": "c"
+        "xiosbase": "c",
+        "vmemory.h": "c"
     }
 }

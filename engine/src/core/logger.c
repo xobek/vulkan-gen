@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-b8 initalize_logger() {
+b8 initialize_logger() {
     // create log file
     return TRUE;
 }
