@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.html": "html",
+        "system_error": "c",
+        "xlocale": "c",
+        "application.h": "c",
+        "asserts.h": "c",
+        "logger.h": "c",
+        "xiosbase": "c"
+    }
+}
