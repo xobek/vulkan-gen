@@ -1,9 +1,10 @@
 #include "vmemory.h"
+
 #include "core/logger.h"
 #include "core/vstring.h"
 #include "platform/platform.h"
-#include <stdio.h>
 
+#include <stdio.h>
 #include <string.h>
 
 struct memory_stats {

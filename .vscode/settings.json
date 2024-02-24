@@ -12,6 +12,9 @@
         "tuple": "cpp",
         "utility": "cpp",
         "platform.h": "c",
-        "event.h": "c"
+        "event.h": "c",
+        "clock.h": "c",
+        "vulkan_backend.h": "c",
+        "vulkan_types.inl": "c"
     }
 }
