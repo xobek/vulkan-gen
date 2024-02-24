@@ -1,5 +1,5 @@
 #include "platform/platform.h"
-
+#include "core/input.h"
 
 #if PLATFORM_WINDOWS
 
@@ -214,19 +214,21 @@
             case WM_KEYUP:
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP: {
-                // b8 pressed = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
-                // TODO: process input
+                b8 pressed = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
+                keys key = (u16)wParam;
+                input_process_key(key, pressed);
             } break;
             case WM_MOUSEMOVE: {
-                // i32 x_pos = GET_X_LPARAM(lParam);
-                // i32 y_pos = GET_Y_LPARAM(lParam);
-                // TODO: process input
+                i32 x_pos = GET_X_LPARAM(lParam);
+                i32 y_pos = GET_Y_LPARAM(lParam);
+                input_process_mouse_move(x_pos, y_pos);
             } break;
             case WM_MOUSEWHEEL: {
-                // i32 z_delta = GET_WHEEL_DELTA_WPARAM(wParam);
-                // if (z_delta != 0) {
-                //     z_delta = (z_delta < 0 ) ? -1 : 1; // map to -1 to 1 
-                // }
+                i32 z_delta = GET_WHEEL_DELTA_WPARAM(wParam);
+                if (z_delta != 0) {
+                    z_delta = (z_delta < 0 ) ? -1 : 1; // map to -1 to 1 
+                    input_process_mouse_wheel(z_delta);
+                }
             } break;
             case WM_LBUTTONDOWN:
             case WM_MBUTTONDOWN:
@@ -234,7 +236,27 @@
             case WM_LBUTTONUP:
             case WM_MBUTTONUP:
             case WM_RBUTTONUP: {
-                // b8 pressed = (uMsg == WM_LBUTTONDOWN || uMsg == WM_MBUTTONDOWN || uMsg == WM_RBUTTONDOWN);
+                b8 pressed = (uMsg == WM_LBUTTONDOWN || uMsg == WM_MBUTTONDOWN || uMsg == WM_RBUTTONDOWN);
+                buttons mouse_button = BUTTON_MAX_BUTTONS;
+
+                switch(uMsg) {
+                    case WM_LBUTTONDOWN:
+                    case WM_LBUTTONUP: {
+                        mouse_button = BUTTON_LEFT;
+                    } break;
+                    case WM_MBUTTONDOWN:
+                    case WM_MBUTTONUP: {
+                        mouse_button = BUTTON_MIDDLE;
+                    } break;
+                    case WM_RBUTTONDOWN:
+                    case WM_RBUTTONUP: {
+                        mouse_button = BUTTON_RIGHT;
+                    } break;
+                }
+
+                if (mouse_button != BUTTON_MAX_BUTTONS) {
+                    input_process_button(mouse_button, pressed);
+                }
             } break;
         }
         return DefWindowProcA(hWnd, uMsg, wParam, lParam);
