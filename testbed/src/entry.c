@@ -4,8 +4,8 @@
 #include <core/vmemory.h>
 
 b8 create_game(game* game) {
-    game->config.x = 100;
-    game->config.y = 100;
+    game->config.x = 500;
+    game->config.y = 500;
     game->config.width = 800;
     game->config.height = 600;
     game->config.name = "vGo Engine";

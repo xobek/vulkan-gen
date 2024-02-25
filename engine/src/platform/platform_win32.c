@@ -10,9 +10,14 @@
     #include <windowsx.h>
     #include <stdlib.h>
 
+    #include <vulkan/vulkan.h>
+    #include <vulkan/vulkan_win32.h>
+    #include "renderer/vulkan/vulkan_types.inl"
+
     typedef struct internal_state {
         HINSTANCE hInstance;
         HWND hWnd;
+        VkSurfaceKHR surface;
     } internal_state;
 
     static f64 clock_frequency;
@@ -196,6 +201,17 @@
 
     void platform_get_required_extension_names(const char ***names_darray) {
         darray_push(*names_darray, &"VK_KHR_win32_surface");
+    }
+
+    b8 platform_create_vulkan_surface(platform_state* plat_state, vulkan_context* context) {
+        internal_state* state = (internal_state*)plat_state->internal_state;
+        VkWin32SurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
+        create_info.hinstance = state->hInstance;
+        create_info.hwnd = state->hWnd;
+
+        VK_CHECK(vkCreateWin32SurfaceKHR(context->instance, &create_info, context->allocator, &state->surface));
+        context->surface = state->surface;
+        return TRUE;
     }
 
     LRESULT CALLBACK win32_process_message(HWND hWnd, u32 uMsg, WPARAM wParam, LPARAM lParam) {

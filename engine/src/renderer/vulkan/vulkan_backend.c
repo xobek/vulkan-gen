@@ -2,6 +2,7 @@
 
 #include "vulkan_types.inl"
 #include "vulkan_platform.h"
+#include "vulkan_device.h"
 
 #include "core/logger.h"
 #include "core/vstring.h"
@@ -12,12 +13,18 @@
 
 static vulkan_context context;
 
+VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_types,
+    const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+    void* user_data);
+
 b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* application_name, struct platform_state* plat_state) {
     context.allocator = 0;
 
     // Setup Vulkan instance.
     VkApplicationInfo app_info = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
-    app_info.apiVersion = VK_API_VERSION_1_2;
+    app_info.apiVersion = VK_API_VERSION_1_3;
     app_info.pApplicationName = application_name;
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -83,12 +90,52 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
     create_info.ppEnabledLayerNames = validation_layer_names;
 
     VK_CHECK(vkCreateInstance(&create_info, context.allocator, &context.instance));
+    INFO("Vulkan instance created.");
+
+    #if defined(_DEBUG)
+    DEBUG("Creating Vulkan debugger...");
+    u32 log_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+                       VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                       VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;  //|
+                                                                      //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+
+    VkDebugUtilsMessengerCreateInfoEXT debug_create_info = {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+    debug_create_info.messageSeverity = log_severity;
+    debug_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    debug_create_info.pfnUserCallback = vk_debug_callback;
+
+    PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(context.instance, "vkCreateDebugUtilsMessengerEXT");
+    ASSERT_MSG(func, "Failed to create debug messenger!");
+    VK_CHECK(func(context.instance, &debug_create_info, context.allocator, &context.debug_messenger));
+    DEBUG("Vulkan debugger created.");
+    #endif
+
+    // Create surface
+    if (!platform_create_vulkan_surface(plat_state, &context)) {
+        FATAL("Failed to create Vulkan surface.");
+        return FALSE;
+    }
+
+    // Create Device
+    if (!vulkan_device_create(&context)) {
+        FATAL("Failed to create Vulkan device.");
+        return FALSE;
+    }
+
 
     INFO("Vulkan renderer initialized successfully.");
     return TRUE;
 }
 
 void vulkan_renderer_backend_shutdown(renderer_backend* backend) {
+    DEBUG("Destroying Vulkan debugger...");
+    if (context.debug_messenger) {
+        PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(context.instance, "vkDestroyDebugUtilsMessengerEXT");
+        func(context.instance, context.debug_messenger, context.allocator);
+    }
+
+    DEBUG("Destroying Vulkan instance...");
+    vkDestroyInstance(context.instance, context.allocator);
 }
 
 void vulkan_renderer_backend_on_resized(renderer_backend* backend, u16 width, u16 height) {
@@ -100,4 +147,27 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend* backend, f32 delta_time
 
 b8 vulkan_renderer_backend_end_frame(renderer_backend* backend, f32 delta_time) {
     return TRUE;
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_types,
+    const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+    void* user_data) {
+    switch (message_severity) {
+        default:
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+            ERROR(callback_data->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+            WARN(callback_data->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+            INFO(callback_data->pMessage);
+            break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+            TRACE(callback_data->pMessage);
+            break;
+    }
+    return VK_FALSE;
 }
