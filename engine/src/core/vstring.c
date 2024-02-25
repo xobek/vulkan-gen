@@ -22,3 +22,7 @@ char* string_concat(const char* string1, const char* string2) {
     vcopy_memory(result + length1, string2, length2 + 1);
     return result;
 }
+
+b8 strings_equal(const char* string1, const char* string2) {
+    return strcmp(string1, string2) == 0;
+}
