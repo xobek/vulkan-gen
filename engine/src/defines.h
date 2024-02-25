@@ -97,3 +97,6 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 #define API
 #endif
 #endif
+
+#define VCLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max \
+                                                                      : value;
