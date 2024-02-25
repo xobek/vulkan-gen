@@ -229,6 +229,16 @@ b8 vulkan_device_create(vulkan_context* context) {
 
     INFO("Queues retrieved.");
 
+    VkCommandPoolCreateInfo pool_create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    pool_create_info.queueFamilyIndex = context->device.graphics_queue_index;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VK_CHECK(vkCreateCommandPool(
+        context->device.logical_device,
+        &pool_create_info,
+        context->allocator,
+        &context->device.graphics_command_pool));
+    INFO("Graphics command pool created.");
+
     return TRUE;
 }
 

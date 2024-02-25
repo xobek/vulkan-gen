@@ -5,9 +5,11 @@
 #include "vulkan_device.h"
 #include "vulkan_swapchain.h"
 #include "vulkan_renderpass.h"
+#include "vulkan_command_buffer.h"
 
 #include "core/logger.h"
 #include "core/vstring.h"
+#include "core/vmemory.h"
 
 #include "containers/darray.h"
 
@@ -23,7 +25,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL vk_debug_callback(
 
 i32 find_memory_index(u32 type_filter, u32 property_flags);
 
-
+void create_command_buffers(renderer_backend* backend);
 
 b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* application_name, struct platform_state* plat_state) {
     context.find_memory_index = find_memory_index;
@@ -144,12 +146,31 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
         1.0f,
         0);
 
+    create_command_buffers(backend);
 
     INFO("Vulkan renderer initialized successfully.");
     return TRUE;
 }
 
 void vulkan_renderer_backend_shutdown(renderer_backend* backend) {
+
+    // Command Buffers
+    for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+        if (context.graphics_command_buffers[i].handle) {
+            vulkan_command_buffer_free(
+                &context,
+                context.device.graphics_command_pool,
+                &context.graphics_command_buffers[i]);
+            context.graphics_command_buffers[i].handle = 0;
+        }
+    }
+    darray_destroy(context.graphics_command_buffers);
+    context.graphics_command_buffers = 0;
+
+    if (context.device.graphics_command_pool) {
+        vkDestroyCommandPool(context.device.logical_device, context.device.graphics_command_pool, context.allocator);
+        context.device.graphics_command_pool = VK_NULL_HANDLE;
+    }
 
     // Renderpass
     vulkan_renderpass_destroy(&context, &context.main_renderpass);
@@ -166,11 +187,14 @@ void vulkan_renderer_backend_shutdown(renderer_backend* backend) {
         context.surface = 0;
     }
 
+#if defined(_DEBUG)
     DEBUG("Destroying Vulkan debugger...");
     if (context.debug_messenger) {
-        PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(context.instance, "vkDestroyDebugUtilsMessengerEXT");
+        PFN_vkDestroyDebugUtilsMessengerEXT func =
+            (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(context.instance, "vkDestroyDebugUtilsMessengerEXT");
         func(context.instance, context.debug_messenger, context.allocator);
     }
+#endif
 
     DEBUG("Destroying Vulkan instance...");
     vkDestroyInstance(context.instance, context.allocator);
@@ -222,4 +246,30 @@ i32 find_memory_index(u32 type_filter, u32 property_flags) {
 
     WARN("Unable to find suitable memory type!");
     return -1;
+}
+
+void create_command_buffers(renderer_backend* backend) {
+    if (!context.graphics_command_buffers) {
+        context.graphics_command_buffers = darray_reserve(vulkan_command_buffer, context.swapchain.image_count);
+        for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+            vzero_memory(&context.graphics_command_buffers[i], sizeof(vulkan_command_buffer));
+        }
+    }
+
+    for (u32 i = 0; i < context.swapchain.image_count; ++i) {
+        if (context.graphics_command_buffers[i].handle) {
+            vulkan_command_buffer_free(
+                &context,
+                context.device.graphics_command_pool,
+                &context.graphics_command_buffers[i]);
+        }
+        vzero_memory(&context.graphics_command_buffers[i], sizeof(vulkan_command_buffer));
+        vulkan_command_buffer_allocate(
+            &context,
+            context.device.graphics_command_pool, 
+            TRUE,
+            &context.graphics_command_buffers[i]);
+    }
+
+    INFO("Vulkan command buffers created.");
 }
