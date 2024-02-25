@@ -17,7 +17,8 @@
         "vulkan_backend.h": "c",
         "vulkan_types.inl": "c",
         "vulkan_platform.h": "c",
-        "vstring.h": "c"
+        "vstring.h": "c",
+        "defines.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
