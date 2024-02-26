@@ -67,6 +67,13 @@ typedef struct vulkan_renderpass {
     vulkan_render_pass_state state;
 } vulkan_renderpass;
 
+typedef struct vulkan_framebuffer {
+    VkFramebuffer handle;
+    u32 attachment_count;
+    VkImageView* attachments;
+    vulkan_renderpass* renderpass;
+} vulkan_framebuffer;
+
 typedef struct vulkan_swapchain {
     VkSurfaceFormatKHR image_format;
     u8 max_frames_in_flight;
@@ -75,6 +82,7 @@ typedef struct vulkan_swapchain {
     VkImage* images;
     VkImageView* views;
     vulkan_image depth_attachment;
+    vulkan_framebuffer* framebuffers;
 } vulkan_swapchain;
 
 typedef enum vulkan_command_buffer_state {
@@ -90,6 +98,11 @@ typedef struct vulkan_command_buffer {
     VkCommandBuffer handle;
     vulkan_command_buffer_state state;
 } vulkan_command_buffer;
+
+typedef struct vulkan_fence {
+    VkFence handle;
+    b8 is_signaled;
+} vulkan_fence;
 
 typedef struct vulkan_context {
 
@@ -110,7 +123,16 @@ typedef struct vulkan_context {
     vulkan_renderpass main_renderpass;
 
     vulkan_command_buffer* graphics_command_buffers;
-    
+
+    VkSemaphore* image_available_semaphores;
+
+    VkSemaphore* queue_complete_semaphores;
+
+    u32 in_flight_fence_count;
+    vulkan_fence* in_flight_fences;
+
+    vulkan_fence** images_in_flight;
+
     u32 image_index;
     u32 current_frame;
     b8 recreating_swapchain;

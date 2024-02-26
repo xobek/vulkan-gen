@@ -18,7 +18,8 @@
         "vulkan_types.inl": "c",
         "vulkan_platform.h": "c",
         "vstring.h": "c",
-        "defines.h": "c"
+        "defines.h": "c",
+        "vulkan_command_buffer.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
