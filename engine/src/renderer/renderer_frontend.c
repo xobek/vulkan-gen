@@ -48,3 +48,11 @@ b8 renderer_draw_frame(render_packet* packet) {
     }
     return TRUE;
 }
+
+void renderer_on_resized(u16 width, u16 height) {
+    if (backend) {
+        backend->resized(backend, width, height);
+    } else {
+        WARN("renderer backend does not exist to accept resize: %i %i", width, height);
+    }
+}
