@@ -33,7 +33,7 @@ void event_shutdown();
  * @param code The event code to listen for.
  * @param listener A pointer to the listener.
  * @param callback The function to call when the event is sent.
- * @return TRUE if the listener was registered successfully.
+ * @return true if the listener was registered successfully.
 */
 API b8 event_register(u16 code, void* listener, PFN_on_event callback);
 
@@ -42,7 +42,7 @@ API b8 event_register(u16 code, void* listener, PFN_on_event callback);
  * @param code The event code to stop listening for.
  * @param listener A pointer to the listener.
  * @param callback The callback function to  be unregistered.
- * @return TRUE if the event is unregistered successfully.
+ * @return true if the event is unregistered successfully.
 */
 API b8 event_unregister(u16 code, void* listener, PFN_on_event callback);
 
@@ -51,7 +51,7 @@ API b8 event_unregister(u16 code, void* listener, PFN_on_event callback);
  * @param code The event code to fire.
  * @param sender A pointer to the sender.
  * @param context The event data.
- * @return TRUE if handled.
+ * @return true if handled.
 */
 API b8 event_fire(u16 code, void* sender, event_context context);
 

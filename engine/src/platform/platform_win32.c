@@ -48,7 +48,7 @@
         
         if (!RegisterClass(&wc)) {
             MessageBoxA(0, "Windows RegisterClass Failed", "Error", MB_OK);
-            return FALSE;
+            return false;
         }
 
         u32 cl_x = x;
@@ -96,7 +96,7 @@
         {
             MessageBoxA(0, "Windows CreateWindowEx Failed", "Error", MB_OK);
             FATAL("Windows CreateWindowEx Failed");
-            return FALSE;
+            return false;
         } else {
             state->hWnd = handle;
         }
@@ -111,7 +111,7 @@
         clock_frequency = 1.0 / (f64)frequency.QuadPart;
         QueryPerformanceCounter(&start_time);
 
-        return TRUE;
+        return true;
     }
 
     void platform_shutdown(platform_state* pstate)
@@ -128,12 +128,12 @@
         MSG msg;
         while (PeekMessageA(&msg, 0, 0, 0, PM_REMOVE)) {
             // if (msg.message == WM_QUIT) {
-            //     return FALSE;
+            //     return false;
             // }
             TranslateMessage(&msg);
             DispatchMessageA(&msg);
         }
-        return TRUE;
+        return true;
     }
 
     void* platform_allocate(u64 size, b8 aligned)
@@ -212,7 +212,7 @@
 
         VK_CHECK(vkCreateWin32SurfaceKHR(context->instance, &create_info, context->allocator, &state->surface));
         context->surface = state->surface;
-        return TRUE;
+        return true;
     }
 
     LRESULT CALLBACK win32_process_message(HWND hWnd, u32 uMsg, WPARAM wParam, LPARAM lParam) {
@@ -223,7 +223,7 @@
             case WM_CLOSE:
                 event_context data = {};
                 event_fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
-                return TRUE;
+                return true;
             case WM_DESTROY:
                 PostQuitMessage(0);
                 return 0;

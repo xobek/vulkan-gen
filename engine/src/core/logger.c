@@ -7,7 +7,7 @@
 
 b8 initialize_logger() {
     // create log file
-    return TRUE;
+    return true;
 }
 
 void shutdown_logger() {

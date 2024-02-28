@@ -16,5 +16,5 @@ b8 create_game(game* game) {
     game->on_resize = game_on_resize;
 
     game->state = vallocate(sizeof(game_state), MEMORY_TAG_GAME);
-    return TRUE;
+    return true;
 }
