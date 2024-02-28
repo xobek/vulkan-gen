@@ -244,11 +244,34 @@
             case WM_KEYUP:
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP: {
+                // KEY PRESSED / RELEASED
                 b8 pressed = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
                 keys key = (u16)wParam;
+
+                if (wParam == VK_MENU) {
+                    if (GetKeyState(VK_RMENU) & 0x8000) {
+                        key = KEY_RALT;
+                    } else if (GetKeyState(VK_LMENU) & 0x8000) {
+                        key = KEY_LALT;
+                    }
+                }else if (wParam == VK_SHIFT) {
+                    if (GetKeyState(VK_RSHIFT) & 0x8000) {
+                        key = KEY_RSHIFT;
+                    } else if (GetKeyState(VK_LSHIFT) & 0x8000) {
+                        key = KEY_LSHIFT;
+                    }
+                } else if (wParam == VK_CONTROL) {
+                    if (GetKeyState(VK_RCONTROL) & 0x8000) {
+                        key = KEY_RCONTROL;
+                    } else if (GetKeyState(VK_LCONTROL) & 0x8000) {
+                        key = KEY_LCONTROL;
+                    }
+                }
+
                 input_process_key(key, pressed);
             } break;
             case WM_MOUSEMOVE: {
+                // MOUSE MOVED
                 i32 x_pos = GET_X_LPARAM(lParam);
                 i32 y_pos = GET_Y_LPARAM(lParam);
                 input_process_mouse_move(x_pos, y_pos);
