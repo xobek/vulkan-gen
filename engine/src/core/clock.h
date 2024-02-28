@@ -7,8 +7,8 @@ typedef struct clock {
     f64 elapsed;
 } clock;
 
-void clock_update(clock* c);
+API void clock_update(clock* c);
 
-void clock_start(clock* c);
+API void clock_start(clock* c);
 
-void clock_stop(clock* c);
+API void clock_stop(clock* c);
