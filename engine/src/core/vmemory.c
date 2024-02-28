@@ -9,7 +9,7 @@
 
 struct memory_stats {
     u64 total_allocated;
-    u64 tagged_allocated[MEMORY_TAG_MAX_TAGS];
+    u64 tagged_allocations[MEMORY_TAG_MAX_TAGS];
 };
 
 static const char* memory_tag_strings[MEMORY_TAG_MAX_TAGS] = {
@@ -33,14 +33,25 @@ static const char* memory_tag_strings[MEMORY_TAG_MAX_TAGS] = {
     "SCENE              "
 };
 
-static struct memory_stats stats;
+typedef struct memory_system_state {
+    struct memory_stats stats;
+    u64 alloc_count;
+} memory_system_state;
+static memory_system_state* state_ptr;
 
-void initialize_memory() {
-    platform_zero_memory(&stats, sizeof(stats));
+void initialize_memory(u64* memory_requirement, void* state) {
+    *memory_requirement = sizeof(memory_system_state);
+    if (state == 0) {
+        return;
+    }
+
+    state_ptr = state;
+    state_ptr->alloc_count = 0;
+    platform_zero_memory(&state_ptr->stats, sizeof(state_ptr->stats));
 }
 
-void shutdown_memory() {
-
+void shutdown_memory(void* state) {
+    state_ptr = 0;
 }
 
 void* vallocate(u64 size, memory_tag tag) {
@@ -48,8 +59,11 @@ void* vallocate(u64 size, memory_tag tag) {
         WARN("vallocate: unknown tag needs reclassification.");
     }
 
-    stats.total_allocated += size;
-    stats.tagged_allocated[tag] += size;
+    if (state_ptr) {
+        state_ptr->stats.total_allocated += size;
+        state_ptr->stats.tagged_allocations[tag] += size;
+        state_ptr->alloc_count++;
+    }
 
     void* block = platform_allocate(size, false);
     platform_zero_memory(block, size);
@@ -61,8 +75,8 @@ void vfree(void* block, u64 size, memory_tag tag) {
         WARN("vfree: unknown tag needs reclassification.");
     }
 
-    stats.total_allocated -= size;
-    stats.tagged_allocated[tag] -= size;
+    state_ptr->stats.total_allocated -= size;
+    state_ptr->stats.tagged_allocations[tag] -= size;
 
     platform_free(block, false);
 }
@@ -90,23 +104,30 @@ char* get_memory_usage_str() {
     for (u32 i=0; i<MEMORY_TAG_MAX_TAGS; i++) {
         char unit[4] = "xiB";
         float amount = 1.0f;
-        if (stats.tagged_allocated[i] > gib) {
+        if (state_ptr->stats.tagged_allocations[i] > gib) {
             unit[0] = 'G';
-            amount = (float)stats.tagged_allocated[i] / (float)gib;
-        } else if (stats.tagged_allocated[i] > mib) {
+            amount = state_ptr->stats.tagged_allocations[i] / (float)gib;
+        } else if (state_ptr->stats.tagged_allocations[i] > mib) {
             unit[0] = 'M';
-            amount = (float)stats.tagged_allocated[i] / (float)mib;
-        } else if (stats.tagged_allocated[i] > kib) {
+            amount = state_ptr->stats.tagged_allocations[i] / (float)mib;
+        } else if (state_ptr->stats.tagged_allocations[i] > kib) {
             unit[0] = 'K';
-            amount = (float)stats.tagged_allocated[i] / (float)kib;
+            amount = state_ptr->stats.tagged_allocations[i] / (float)kib;
         } else {
             unit[0] = 'B';
             unit[1] = 0;
-            amount = (float)stats.tagged_allocated[i];
+            amount = (float)state_ptr->stats.tagged_allocations[i];
         }
         i32 length = snprintf(buffer + offset, 8192 - offset, "  %s: %.2f %s\n", memory_tag_strings[i], amount, unit);
         offset += length;
     }
     char* output = string_duplicate(buffer);
     return output;
+}
+
+u64 get_memory_alloc_count() {
+    if (state_ptr) {
+        return state_ptr->alloc_count;
+    }
+    return 0;
 }

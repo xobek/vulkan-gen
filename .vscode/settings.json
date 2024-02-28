@@ -20,7 +20,8 @@
         "vstring.h": "c",
         "defines.h": "c",
         "vulkan_command_buffer.h": "c",
-        "xmemory": "c"
+        "xmemory": "c",
+        "input.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

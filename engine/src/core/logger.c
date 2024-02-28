@@ -5,13 +5,25 @@
 #include <string.h>
 #include <stdarg.h>
 
-b8 initialize_logger() {
-    // create log file
+typedef struct logger_system_state {
+    b8 initialized;
+} logger_system_state;
+static logger_system_state* state_ptr;
+
+b8 initialize_logger(u64* memory_requirement, void* state) {
+    *memory_requirement = sizeof(logger_system_state);
+    if (state == 0) {
+        return true;
+    }
+
+    state_ptr = state;
+    state_ptr->initialized = true;
     return true;
 }
 
-void shutdown_logger() {
+void shutdown_logger(void* state) {
     // finish queue
+    state_ptr = 0;
 }
 
 void log_output(log_level level, const char* msg, ...) {

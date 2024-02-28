@@ -2,15 +2,11 @@
 
 #include "core/application.h"
 #include "core/logger.h"
-#include "core/vmemory.h"
 #include "gametypes.h"
 
 extern b8 create_game(game* out_game);
 
 int main(void) {
-
-    initialize_memory();
-
     game game_inst;
     if (!create_game(&game_inst)) {
         ERROR("Failed to create game instance!");
