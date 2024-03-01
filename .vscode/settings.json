@@ -21,7 +21,19 @@
         "defines.h": "c",
         "vulkan_command_buffer.h": "c",
         "xmemory": "c",
-        "input.h": "c"
+        "input.h": "c",
+        "*.rh": "c",
+        "charconv": "c",
+        "format": "c",
+        "ios": "c",
+        "istream": "c",
+        "optional": "c",
+        "ostream": "c",
+        "sstream": "c",
+        "string": "c",
+        "vector": "c",
+        "xlocbuf": "c",
+        "xstring": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -2,13 +2,17 @@
 
 #include "defines.h"
 
-typedef struct platform_state {
-    void* internal_state;
-} platform_state;
-
-b8 platform_startup(platform_state* pstate, const char* app_name, i32 x, i32 y, i32 w, i32 h);
-void platform_shutdown(platform_state* state);
-b8 platform_pump_messages(platform_state* state);
+b8 platform_system_startup(
+    u64* memory_requirement,
+    void* state,
+    const char* application_name,
+    i32 x,
+    i32 y,
+    i32 width,
+    i32 height);
+    
+void platform_system_shutdown(void* plat_state);
+b8 platform_pump_messages();
 
 void* platform_allocate(u64 size, b8 aligned);
 void platform_free(void* block, b8 aligned);

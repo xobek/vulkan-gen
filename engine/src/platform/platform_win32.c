@@ -15,24 +15,29 @@
     #include <vulkan/vulkan_win32.h>
     #include "renderer/vulkan/vulkan_types.inl"
 
-    typedef struct internal_state {
+    typedef struct platform_state {
         HINSTANCE hInstance;
         HWND hWnd;
         VkSurfaceKHR surface;
-    } internal_state;
+        f64 clock_frequency;
+        LARGE_INTEGER start_time;
+    } platform_state;
+
+    static platform_state *state_ptr;
 
     static f64 clock_frequency;
     static LARGE_INTEGER start_time;
     LRESULT CALLBACK win32_process_message(HWND hWnd, u32 uMsg, WPARAM wParam, LPARAM lParam);
 
-    b8 platform_startup(platform_state* pstate, const char* app_name, i32 x, i32 y, i32 w, i32 h)
-    {
-        pstate->internal_state = malloc(sizeof(internal_state));
-        internal_state* state = (internal_state*)pstate->internal_state;
-        
-        state->hInstance = GetModuleHandleA(0);
+b8 platform_system_startup(u64 *memory_requirement, void *state, const char *application_name, i32 x, i32 y, i32 w, i32 h) {
+        *memory_requirement = sizeof(platform_state);
+        if (state == 0) {
+            return true;
+        }
+        state_ptr = state;
+        state_ptr->hInstance = GetModuleHandleA(0);
 
-        HICON hIcon = LoadIcon(state->hInstance, IDI_APPLICATION);
+        HICON icon = LoadIcon(state_ptr->hInstance, IDI_APPLICATION);
         HCURSOR hCursor = LoadCursor(0, IDC_ARROW);
         WNDCLASS wc = {0};
         memset(&wc, 0, sizeof(wc));
@@ -40,8 +45,8 @@
         wc.lpfnWndProc = win32_process_message;
         wc.cbClsExtra = 0;
         wc.cbWndExtra = 0;
-        wc.hInstance = state->hInstance;
-        wc.hIcon = hIcon;
+        wc.hInstance = state_ptr->hInstance;
+        wc.hIcon = icon;
         wc.hCursor = hCursor;
         wc.hbrBackground = NULL;
         wc.lpszClassName = "veng_windows_class";
@@ -78,19 +83,9 @@
         window_h += window_rect.bottom - window_rect.top;
 
         HWND handle = CreateWindowExA(
-            window_style_ex,
-            "veng_windows_class",
-            app_name,
-            window_style,
-            window_x,
-            window_y,
-            window_w,
-            window_h,
-            0,
-            0,
-            state->hInstance,
-            0
-        );
+            window_style_ex, "veng_windows_class", application_name,
+            window_style, window_x, window_y, window_w, window_h,
+            0, 0, state_ptr->hInstance, 0);
 
         if (handle == 0)
         {
@@ -98,40 +93,36 @@
             FATAL("Windows CreateWindowEx Failed");
             return false;
         } else {
-            state->hWnd = handle;
+            state_ptr->hWnd = handle;
         }
 
         b32 should_activate = 1;
         i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
 
-        ShowWindow(state->hWnd, show_window_command_flags);
+        ShowWindow(state_ptr->hWnd, show_window_command_flags);
 
         LARGE_INTEGER frequency;
         QueryPerformanceFrequency(&frequency);
-        clock_frequency = 1.0 / (f64)frequency.QuadPart;
-        QueryPerformanceCounter(&start_time);
+        state_ptr->clock_frequency = 1.0 / (f64)frequency.QuadPart;
+        QueryPerformanceCounter(&state_ptr->start_time);
 
         return true;
     }
 
-    void platform_shutdown(platform_state* pstate)
-    {
-        internal_state* state = (internal_state*)pstate->internal_state;
-        if (state->hWnd) {
-            DestroyWindow(state->hWnd);
-            state->hWnd = 0;
+    void platform_system_shutdown(void *plat_state) {
+        if (state_ptr && state_ptr->hWnd) {
+            DestroyWindow(state_ptr->hWnd);
+            state_ptr->hWnd = 0;
         }
     }
 
-    b8 platform_pump_messages(platform_state* pstate)
-    {
-        MSG msg;
-        while (PeekMessageA(&msg, 0, 0, 0, PM_REMOVE)) {
-            // if (msg.message == WM_QUIT) {
-            //     return false;
-            // }
-            TranslateMessage(&msg);
-            DispatchMessageA(&msg);
+    b8 platform_pump_messages() {
+        if (state_ptr) {
+            MSG message;
+            while (PeekMessageA(&message, NULL, 0, 0, PM_REMOVE)) {
+                TranslateMessage(&message);
+                DispatchMessageA(&message);
+            }
         }
         return true;
     }
@@ -190,9 +181,12 @@
 
     f64 platform_get_absolute_time()
     {
-        LARGE_INTEGER current_time;
-        QueryPerformanceCounter(&current_time);
-        return (f64)current_time.QuadPart * clock_frequency;
+        if (state_ptr) {
+            LARGE_INTEGER now_time;
+            QueryPerformanceCounter(&now_time);
+            return (f64)now_time.QuadPart * state_ptr->clock_frequency;
+        }
+        return 0;
     }
 
     void platform_sleep(u64 ms)
@@ -204,18 +198,25 @@
         darray_push(*names_darray, &"VK_KHR_win32_surface");
     }
 
-    b8 platform_create_vulkan_surface(platform_state* plat_state, vulkan_context* context) {
-        internal_state* state = (internal_state*)plat_state->internal_state;
+    b8 platform_create_vulkan_surface(vulkan_context* context) {
+        if (!state_ptr) {
+            return false;
+        }
         VkWin32SurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
-        create_info.hinstance = state->hInstance;
-        create_info.hwnd = state->hWnd;
+        create_info.hinstance = state_ptr->hInstance;
+        create_info.hwnd = state_ptr->hWnd;
 
-        VK_CHECK(vkCreateWin32SurfaceKHR(context->instance, &create_info, context->allocator, &state->surface));
-        context->surface = state->surface;
+        VkResult result = vkCreateWin32SurfaceKHR(context->instance, &create_info, context->allocator, &state_ptr->surface);
+        if (result != VK_SUCCESS) {
+            FATAL("Vulkan surface creation failed.");
+            return false;
+        }
+        context->surface = state_ptr->surface;
         return true;
     }
 
     LRESULT CALLBACK win32_process_message(HWND hWnd, u32 uMsg, WPARAM wParam, LPARAM lParam) {
+
         switch(uMsg)
         {
             case WM_ERASEBKGND:
