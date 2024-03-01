@@ -19,6 +19,8 @@
 
 #include "platform/platform.h"
 
+#include "shaders/vulkan_object_shader.h"
+
 static vulkan_context context;
 static u32 cached_framebuffer_width = 0;
 static u32 cached_framebuffer_height = 0;
@@ -175,19 +177,20 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
         vkCreateSemaphore(context.device.logical_device, &semaphore_create_info, context.allocator, &context.image_available_semaphores[i]);
         vkCreateSemaphore(context.device.logical_device, &semaphore_create_info, context.allocator, &context.queue_complete_semaphores[i]);
 
-        // Create the fence in a signaled state, indicating that the first frame has already been "rendered".
-        // This will prevent the application from waiting indefinitely for the first frame to render since it
-        // cannot be rendered until a frame is "rendered" before it.
         vulkan_fence_create(&context, true, &context.in_flight_fences[i]);
     }
 
-    // In flight fences should not yet exist at this point, so clear the list. These are stored in pointers
-    // because the initial state should be 0, and will be 0 when not in use. Acutal fences are not owned
-    // by this list.
     context.images_in_flight = darray_reserve(vulkan_fence, context.swapchain.image_count);
     for (u32 i = 0; i < context.swapchain.image_count; ++i) {
         context.images_in_flight[i] = 0;
     }
+    
+    if (!vulkan_object_shader_create(&context, &context.object_shader)) {
+        ERROR("Error loading built-in basic_lighting shader.");
+        return false;
+    }
+
+
     INFO("Vulkan renderer initialized successfully.");
     return true;
 }

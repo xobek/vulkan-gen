@@ -249,24 +249,16 @@ b8 platform_system_startup(u64 *memory_requirement, void *state, const char *app
                 b8 pressed = (uMsg == WM_KEYDOWN || uMsg == WM_SYSKEYDOWN);
                 keys key = (u16)wParam;
 
+                b8 extended = (HIWORD(lParam) & KF_EXTENDED) != KF_EXTENDED;
+
                 if (wParam == VK_MENU) {
-                    if (GetKeyState(VK_RMENU) & 0x8000) {
-                        key = KEY_RALT;
-                    } else if (GetKeyState(VK_LMENU) & 0x8000) {
-                        key = KEY_LALT;
-                    }
-                }else if (wParam == VK_SHIFT) {
-                    if (GetKeyState(VK_RSHIFT) & 0x8000) {
-                        key = KEY_RSHIFT;
-                    } else if (GetKeyState(VK_LSHIFT) & 0x8000) {
-                        key = KEY_LSHIFT;
-                    }
+                    key = extended ? KEY_RALT : KEY_LALT;
+                } else if (wParam == VK_SHIFT) {
+                    u32 left_shift = MapVirtualKeyA(VK_LSHIFT, MAPVK_VK_TO_VSC);
+                    u32 scan_code = (lParam & (0xFF << 16)) >> 16;
+                    key = (scan_code == left_shift) ? KEY_LSHIFT : KEY_RSHIFT;
                 } else if (wParam == VK_CONTROL) {
-                    if (GetKeyState(VK_RCONTROL) & 0x8000) {
-                        key = KEY_RCONTROL;
-                    } else if (GetKeyState(VK_LCONTROL) & 0x8000) {
-                        key = KEY_LCONTROL;
-                    }
+                    key = extended ? KEY_RCONTROL : KEY_LCONTROL;
                 }
 
                 input_process_key(key, pressed);
