@@ -1,14 +1,25 @@
-#include "logger.h" 
+#include "logger.h"
+#include "asserts.h"
+#include "core/vstring.h"
+#include "core/vmemory.h"
 #include "platform/platform.h"
-
-#include <stdio.h>
-#include <string.h>
+#include "platform/filesystem.h"
 #include <stdarg.h>
 
 typedef struct logger_system_state {
-    b8 initialized;
+    file_handle log_file_handle;
 } logger_system_state;
 static logger_system_state* state_ptr;
+
+void append_to_log_file(const char* msg) {
+    if (state_ptr && state_ptr->log_file_handle.is_valid) {
+        u64 length = string_length(msg);
+        u64 written = 0;
+        if (!filesystem_write(&state_ptr->log_file_handle, length, msg, &written)) {
+            platform_console_write_error("ERROR: Unable to write to log file.", LOG_LEVEL_ERROR);
+        }
+    }
+}
 
 b8 initialize_logger(u64* memory_requirement, void* state) {
     *memory_requirement = sizeof(logger_system_state);
@@ -17,7 +28,13 @@ b8 initialize_logger(u64* memory_requirement, void* state) {
     }
 
     state_ptr = state;
-    state_ptr->initialized = true;
+
+    if (!filesystem_open("console.log", FILE_MODE_WRITE, false, &state_ptr->log_file_handle)) {
+        platform_console_write_error("ERROR: Unaable to open console log file for writing.", LOG_LEVEL_ERROR);
+        return false;
+    }
+
+
     return true;
 }
 
@@ -27,27 +44,22 @@ void shutdown_logger(void* state) {
 }
 
 void log_output(log_level level, const char* msg, ...) {
-    const char* levels[6] = {"[FATAL]: ", "[ERROR]: ", "[WARN]: ", "[INFO]: ", "[DEBUG]: ", "[TRACE]: "};
-    b8 isError = level <= LOG_LEVEL_ERROR;
+    const char* level_strings[6] = {"[FATAL]: ", "[ERROR]: ", "[WARN]:  ", "[INFO]:  ", "[DEBUG]: ", "[TRACE]: "};
+    b8 is_error = level < LOG_LEVEL_WARN;
 
-    const i32 msg_length = 32000;
-    char output[msg_length];
-    memset(output, 0, sizeof(output));
+    char out_message[32000];
+    vzero_memory(out_message, sizeof(out_message));
 
     __builtin_va_list arg_ptr;
-    va_start(arg_ptr, msg); // start after msg arg
-    vsnprintf(output, sizeof(output), msg, arg_ptr);
+    va_start(arg_ptr, msg);
+    string_format_v(out_message, msg, arg_ptr);
     va_end(arg_ptr);
 
-    char new_output[msg_length];
-
-    sprintf(new_output, "%s%s\n", levels[level], output); // prepend level label before output
-    if (isError)
-    {
-        platform_console_write(new_output, level);
+    string_format(out_message, "%s%s\n", level_strings[level], out_message);
+    if (is_error) {
+        platform_console_write_error(out_message, level);
+    } else {
+        platform_console_write(out_message, level);
     }
-    else
-    {
-        platform_console_write(new_output, level);
-    }
+    append_to_log_file(out_message);
 }
