@@ -196,6 +196,10 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
 }
 
 void vulkan_renderer_backend_shutdown(renderer_backend* backend) {
+    vkDeviceWaitIdle(context.device.logical_device);
+    
+    vulkan_object_shader_destroy(&context, &context.object_shader);
+    
     // Sync objects
     vkDeviceWaitIdle(context.device.logical_device);
     for (u8 i = 0; i < context.swapchain.max_frames_in_flight; ++i) {
