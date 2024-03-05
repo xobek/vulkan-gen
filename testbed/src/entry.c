@@ -6,8 +6,8 @@
 b8 create_game(game* game) {
     game->config.x = 500;
     game->config.y = 500;
-    game->config.width = 800;
-    game->config.height = 600;
+    game->config.width = 1280;
+    game->config.height = 720;
     game->config.name = "vGo Engine";
 
     game->initialize = game_initialize;
