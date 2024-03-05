@@ -15,6 +15,6 @@ jobs:
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1.8.0
     - name: Build Engine
-      run: nmake /f Makefile.engine.windows.mak
+      run: make /f Makefile.engine.windows.mak all
     - name: Build Game
-      run: nmake /f Makefile.testbed.windows.mak
+      run: make /f Makefile.testbed.windows.mak all
