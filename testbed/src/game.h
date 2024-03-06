@@ -2,9 +2,14 @@
 
 #include <defines.h>
 #include <gametypes.h>
+#include <math/vmath.h>
 
 typedef struct game_state {
     f32 delta_time;
+    mat4 view;
+    vec3 camera_position;
+    vec3 camera_euler;
+    b8 camera_view_dirty;
 } game_state;
 
 b8 game_initialize(struct game* game_inst);

@@ -35,7 +35,11 @@
         "xlocbuf": "c",
         "xstring": "c",
         "vulkan_pipeline.h": "c",
-        "vulkan_buffer.h": "c"
+        "vulkan_buffer.h": "c",
+        "algorithm": "c",
+        "xlocnum": "c",
+        "vmath.h": "c",
+        "type_traits": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
